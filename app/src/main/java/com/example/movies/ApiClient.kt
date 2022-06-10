@@ -1,23 +1,19 @@
-package com.example.movies;
+package com.example.movies
 
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-
-
-public class ApiClient {
-
-    public static final String BASE_URL = "https://www.omdbapi.com/?";
-    private static Retrofit retrofit = null;
-
-
-    public static Retrofit getClient() {
-        if (retrofit == null) {
-            retrofit = new Retrofit.Builder()
+object ApiClient {
+    const val BASE_URL = "https://www.omdbapi.com/?"
+    private var retrofit: Retrofit? = null
+    val client: Retrofit?
+        get() {
+            if (retrofit == null) {
+                retrofit = Retrofit.Builder()
                     .baseUrl(BASE_URL)
                     .addConverterFactory(GsonConverterFactory.create())
-                    .build();
+                    .build()
+            }
+            return retrofit
         }
-        return retrofit;
-    }
 }

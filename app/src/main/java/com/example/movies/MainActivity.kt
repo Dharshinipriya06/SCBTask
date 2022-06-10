@@ -1,80 +1,70 @@
-package com.example.movies;
+package com.example.movies
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SearchView;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
+import android.os.Bundle
+import android.util.Log
+import android.view.View
+import androidx.appcompat.widget.SearchView
+import androidx.recyclerview.widget.GridLayoutManager
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
-import android.os.Bundle;
-import android.util.Log;
-
-import android.widget.Toast;
-
-import java.util.ArrayList;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-public class MainActivity extends AppCompatActivity {
-    private static final String TAG = MainActivity.class.getSimpleName();
-    private final static String API_KEY = BuildConfig.API_KEY;
-    private RecyclerView recyclerView;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        SearchView simpleSearchView = (SearchView) findViewById(R.id.searchList); // inititate a search view
-
-        simpleSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                getSearchMovies(query, "movie");
-                return false;
+class MainActivity : AppCompatActivity() {
+    private var recyclerView: RecyclerView? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        val simpleSearchView =
+            findViewById<View>(R.id.searchList) as SearchView
+        simpleSearchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String): Boolean {
+                getSearchMovies(query, "movie")
+                return false
             }
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                getSearchMovies(newText, "movie");
-                return false;
+            override fun onQueryTextChange(newText: String): Boolean {
+                getSearchMovies(newText, "movie")
+                return false
             }
-        });
-        recyclerView = (RecyclerView) findViewById(R.id.recyclerList);
-        recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
-
+        })
+        recyclerView = findViewById<View>(R.id.recyclerList) as RecyclerView
+        recyclerView!!.layoutManager = GridLayoutManager(this, 2)
     }
 
-    private void getSearchMovies(String newText, String movie) {
-        ApiInterface apiService =
-                ApiClient.getClient().create(ApiInterface.class);
-
-        Call<MovieResponse> call = apiService.getTopRatedMovies("", API_KEY, newText, movie);
-        call.enqueue(new Callback<MovieResponse>() {
-            @Override
-            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
-                String resListmovies = response.body().getResponse();
+    private fun getSearchMovies(newText: String, movie: String) {
+        val apiService = ApiClient.client?.create(ApiInterface::class.java)
+        val call = apiService?.getTopRatedMovies("", API_KEY, newText, movie)
+        call?.enqueue(object : Callback<MovieResponse?> {
+            override fun onResponse(
+                call: Call<MovieResponse?>,
+                response: Response<MovieResponse?>
+            ) {
+                val resListmovies = response.body()!!.response
                 // Log.e(TAG, resListmovies);
-                if (resListmovies.equals("True")) {
-                    ArrayList<Search> movies = response.body().getSearch();
-                    recyclerView.setAdapter(new MoviesAdapter(movies, R.layout.list_layout, getApplicationContext()));
-                    Log.d(TAG, "Number of movies received: " + movies.size());
+                if (resListmovies == "True") {
+                    val movies = response.body()!!.search
+                    recyclerView!!.adapter =
+                        movies?.let { MoviesAdapter(it, R.layout.list_layout, applicationContext) }
                 } else {
-                    // Toast.makeText(getApplicationContext(),response.body().getError(),Toast.LENGTH_LONG).show();
-                    Log.e(TAG, resListmovies);
+
+                    if (resListmovies != null) {
+                        Log.e(TAG, resListmovies)
+                    }
                 }
 
-
             }
 
+            override fun onFailure(call: Call<MovieResponse?>, t: Throwable) {
 
-            @Override
-            public void onFailure(Call<MovieResponse> call, Throwable t) {
-                // Log error here since request failed
-                Log.e(TAG, t.toString());
+                Log.e(TAG, t.toString())
             }
-        });
+        })
     }
 
+    companion object {
+        private val TAG = MainActivity::class.java.simpleName
+        private const val API_KEY = BuildConfig.API_KEY
+    }
 }
